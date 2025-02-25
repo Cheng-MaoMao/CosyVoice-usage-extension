@@ -143,24 +143,95 @@ def semantic_search_and_respond(query: str, vector_db: VectorDB) -> str:
     
     return embedding_prompt
 
+def clean_text(text: str) -> str:
+    """清理文本内容"""
+    # 移除多余空白字符
+    text = re.sub(r'\s+', ' ', text.strip())
+    # 移除常见无用内容
+    patterns_to_remove = [
+        r'百度首页|登录|注册|进入词条|全站搜索',
+        r'播报|编辑|展开|收藏|查看',
+        r'有用\+\d+',
+        r'©\d{4} Baidu',
+        r'使用百度前必读|百科协议|隐私政策',
+        r'京ICP证\d+号',
+        r'京公网安备\d+号'
+    ]
+    for pattern in patterns_to_remove:
+        text = re.sub(pattern, '', text)
+    return text.strip()
+
+def split_to_chunks(text: str, min_length: int = 50) -> List[str]:
+    """将文本分割成适当大小的块"""
+    # 按段落分割
+    paragraphs = text.split('\n')
+    chunks = []
+    current_chunk = []
+    current_length = 0
+    
+    for para in paragraphs:
+        para = clean_text(para)
+        if not para:  # 跳过空段落
+            continue
+            
+        # 如果当前段落过长，进行分句处理
+        if len(para) > 500:
+            sentences = re.split(r'[。！？]', para)
+            sentences = [s + '。' for s in sentences if s.strip()]
+            for sentence in sentences:
+                if current_length + len(sentence) > 500:
+                    if current_chunk:
+                        chunks.append(' '.join(current_chunk))
+                        current_chunk = []
+                        current_length = 0
+                current_chunk.append(sentence)
+                current_length += len(sentence)
+        else:
+            if current_length + len(para) > 500:
+                if current_chunk:
+                    chunks.append(' '.join(current_chunk))
+                    current_chunk = []
+                    current_length = 0
+            current_chunk.append(para)
+            current_length += len(para)
+    
+    # 处理最后一块
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+    
+    # 过滤掉过短的块
+    chunks = [chunk for chunk in chunks if len(chunk) >= min_length]
+    return chunks
+
 def analyze_webpage(url_str: str, vector_db: VectorDB):
     """
     分析指定网页内容：
-    1. 获取页面内容并使用BeautifulSoup提取纯文本。
-    2. 清洗文本后添加到向量数据库中。
+    1. 获取页面内容并使用BeautifulSoup提取纯文本
+    2. 将文本分割成合适大小的块
+    3. 清洗文本后添加到向量数据库中
     """
     try:
         response = requests.get(url_str)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
+            
+            # 移除script和style标签
+            for script in soup(["script", "style"]):
+                script.decompose()
+                
             # 提取页面中所有文本
-            page_text = soup.get_text(separator='\n')
-            cleaned_text = "\n".join(line.strip() for line in page_text.splitlines() if line.strip())
-            if cleaned_text:
-                vector_db.add_texts([cleaned_text])
+            page_text = soup.get_text()
+            
+            # 分割并清洗文本
+            text_chunks = split_to_chunks(page_text)
+            
+            if text_chunks:
+                # 添加到向量数据库
+                vector_db.add_texts(text_chunks)
                 print(f"网页内容已分析并添加到向量数据库：{url_str}")
+                print(f"共添加 {len(text_chunks)} 个文本块")
             else:
-                print("网页内容为空，未添加到数据库。")
+                print("处理后的网页内容为空，未添加到数据库。")
         else:
             print(f"获取网页失败，状态码：{response.status_code}")
     except Exception as e:
@@ -369,11 +440,11 @@ if __name__ == "__main__":
     # gradio_api_use()
 
     # 示例：分析网页内容并添加到向量数据库中
-    test_url = "https://baike.baidu.com/item/%E4%BC%91%E4%BC%AF%E5%88%A9%E5%AE%89%E5%8F%B7/22208775"
+    test_url = "https://mzh.moegirl.org.cn/%E7%88%B1%E8%8E%89%E5%B8%8C%E9%9B%85"
 
     analyze_webpage(test_url, vector_db)
     
-    query = "休伯利安搭乘人员"
+    query = "爱莉希雅的融合战士编号是多少？"
     print(f"\n查询: {query}")
     response_text = semantic_search_and_respond(query, vector_db)
     print("\n生成的回答:")
