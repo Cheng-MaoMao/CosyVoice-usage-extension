@@ -24,7 +24,7 @@ prompt_text = "" # 存储提示文本
 audio_file=""# 存储音频文件路径
 
 # 大模型 API配置
-url = "https://api.siliconflow.cn/v1/chat/completions"
+api_url = "https://api.siliconflow.cn/v1/chat/completions"
 headers = {
     "Authorization": "Bearer sk-jgxgrpjdrxmmtghsjmplqkdclxcjegasofsrfbfcwkyiaekc",
     "Content-Type": "application/json"
@@ -80,7 +80,7 @@ def ai_chat(user_input:str,embedding_prompt:str):
         "response_format": {"type": "text"},  # 响应格式
     }
 
-    response = requests.post(url, json=payload, headers=headers)  # 发送请求
+    response = requests.post(api_url, json=payload, headers=headers)  # 发送请求
     response.raise_for_status()
     response_json = response.json()  # 获取JSON格式的响应
 
@@ -465,7 +465,7 @@ def get_llm_response(embedding_prompt: str) -> str:
         "response_format": {"type": "text"},  # 响应格式
     }
 
-    response = requests.post(url, json=payload, headers=headers)  # 发送POST请求
+    response = requests.post(api_url, json=payload, headers=headers)  # 发送POST请求
     response.raise_for_status()
     return response.json()['choices'][0]['message']['content']  # 提取并返回LLM的回答
 
@@ -585,7 +585,7 @@ def send_audio_info_to_ai(user_input:str):
         "response_format": {"type": "text"},  # 响应格式
     }
 
-    response = requests.post(url, json=payload, headers=headers)  # 发送请求
+    response = requests.post(api_url, json=payload, headers=headers)  # 发送请求
     response.raise_for_status()
     response_json = response.json()  # 获取JSON格式的响应
 
@@ -721,7 +721,7 @@ if __name__ == "__main__":
         vector_db = VectorDB()  # 创建向量数据库实例
 
         #输入知识库内容
-        url = [
+        webpage_urls = [
         "https://baike.baidu.com/item/%E4%BC%91%E4%BC%AF%E5%88%A9%E5%AE%89%E5%8F%B7/22208775",
         "https://mzh.moegirl.org.cn/%E4%BC%91%E4%BC%AF%E5%88%A9%E5%AE%89%E5%8F%B7%E8%88%B0%E9%95%BF",
         "https://mzh.moegirl.org.cn/%E5%B4%A9%E5%9D%8F3",
@@ -729,7 +729,7 @@ if __name__ == "__main__":
         "https://mzh.moegirl.org.cn/%E7%88%B1%E8%8E%89%E5%B8%8C%E9%9B%85"
         ]
 
-        batch_analyze_webpages(url, vector_db)
+        batch_analyze_webpages(webpage_urls, vector_db)
 
         while True:
          print("请输入聊天内容：")
