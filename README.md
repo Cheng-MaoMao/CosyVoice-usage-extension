@@ -133,7 +133,10 @@ ai-voice-assistant/
 
 本项目基于以下优秀的开源项目开发：
 
-- [CosyVoice](https://github.com/FunAudioLLM/CosyVoice) - CosyVoice语音合成
+- [CosyVoice](https://github.com/FunAudioLLM/CosyVoice)
+
+感谢B站UP主TinyLight微光小明分享的爱莉希雅参考音频
+- [TinyLight微光小明](https://space.bilibili.com/13264090)
 
 ## 📄 开源协议
 

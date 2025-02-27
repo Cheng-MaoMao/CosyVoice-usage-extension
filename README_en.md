@@ -124,7 +124,11 @@ Welcome to submit improvements via Issues or PRs!
 
 This project is developed based on these excellent open-source projects:
 
-- [CosyVoice](https://github.com/FunAudioLLM/CosyVoice) - CosyVoice speech synthesis
+- [CosyVoice](https://github.com/FunAudioLLM/CosyVoice)
+
+Thanks to the audio shared by Bilibili UP主 TinyLight微光小明 for reference on Alishia
+
+- [TinyLight微光小明](https://space.bilibili.com/13264090)
 
 ## 📄 License
 
