@@ -113,9 +113,9 @@ def text_normalize(self, text, split=True, text_frontend=True):
 
 
 # Start CosyVoice first
-python webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
-# Then run main.py
-python main.py
+python webui.py --port 50000 --model_dir pretrained_models/models_name
+# Then run ai_chat.py
+python ai_chat.py
 
 
 ### WebUI Method

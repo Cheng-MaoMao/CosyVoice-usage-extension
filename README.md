@@ -113,9 +113,9 @@ batch_analyze_webpages(webpage_urls, vector_db) # 将网页内容添加到知识
 
 ```python
 # 先启动CosyVoice
-python webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
-# 再运行main.py
-python main.py
+python webui.py --port 50000 --model_dir pretrained_models/models_name
+# 再运行ai_chat.py
+python ai_chat.py
 ```
 
 ### WebUI 方式
