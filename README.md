@@ -30,18 +30,25 @@
 
 ### ⚙️ 安装步骤
 
+#### 命令行方式
+
 ## 🔧 功能特性
 
-| 功能模块     | 支持技术                   | 特性描述            |
-| ------------ | -------------------------- | ------------------- |
-| 智能对话生成 | DeepSeek-R1/Qwen2.5/Others | 🧠 多轮情景对话     |
-| 语义检索     | BGE-M3 嵌入模型 + FAISS    | 🔍 知识库快速匹配   |
-| 语音合成     | CosyVoice API              | 🎵 情感化语音生成   |
-| 网页分析     | Selenium + BeautifulSoup   | 🌐 动态网页内容抓取 |
+| 功能模块     | 支持技术                   | 特性描述             |
+| ------------ | -------------------------- | -------------------- |
+| 智能对话生成 | DeepSeek-R1/Qwen2.5/Others | 🧠 多轮情景对话      |
+| 语义检索     | BGE-M3 嵌入模型 + FAISS    | 🔍 知识库快速匹配    |
+| 语音合成     | CosyVoice API              | 🎵 情感化语音生成    |
+| 网页分析     | Selenium + BeautifulSoup   | 🌐 动态网页内容抓取  |
+| 图形界面     | Gradio                     | 🖥️ 用户友好的WebUI |
 
 ## 📖 使用指南
 
-### 1. 添加大模型url和密钥
+*推荐使用webui*
+
+### 命令行方式
+
+#### 1. 添加大模型url和密钥
 
 ```python
 # 大模型 API配置
@@ -50,14 +57,15 @@ headers = {
     "Authorization": "Bearer sk-jgxgrpjdrxmmtghsjmplqkdclxcjegasofsrfbfcwkyiaekc",
     "Content-Type": "application/json"
 }
-# 在以下函数中修改需要使用的大模型
-ai_chat()
-embedding_model()
-get_llm_response()
-send_audio_info_to_ai()
+# 修改ai_chat.py中以下的全局变量
+chat_model = "deepseek-ai/DeepSeek-R1"
+text_model = "Qwen/Qwen2.5-72B-Instruct"
+embed_model = "BAAI/bge-m3"
+text_api_url = "https://api.siliconflow.cn/v1/chat/completions"
+url_embedding = "https://api.siliconflow.cn/v1/embeddings"
 ```
 
-### 2. 准备知识库
+#### 2. 准备知识库
 
 ```python
 vector_db = VectorDB()  # 创建向量数据库实例
@@ -67,7 +75,7 @@ batch_analyze_webpages(webpage_urls, vector_db) # 将网页内容添加到知识
 
 *运行一次构建成功后请注释添加代码以加快运行速度*
 
-### 3. 修改CosyVoice代码
+#### 3. 修改CosyVoice代码
 
 ```python
  #修改webui.py(关闭流式传输--必须)
@@ -96,12 +104,12 @@ batch_analyze_webpages(webpage_urls, vector_db) # 将网页内容添加到知识
         else:
             text = self.en_tn_model.normalize(text)
             text = spell_out_number(text, self.inflect_parser)
-          
+      
      # 移除了split_paragraph切片处理,直接返回整个文本
      return [text] if split is True else text
 ```
 
-### 4. 启动服务
+#### 4. 启动服务
 
 ```python
 # 先启动CosyVoice
@@ -110,15 +118,61 @@ python webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
 python main.py
 ```
 
-## 📂 项目结构
+### WebUI 方式
 
+#### 1. 修改CosyVoice代码
+
+```python
+ #修改webui.py(关闭流式传输--必须)
+ audio_output = gr.Audio(label="合成音频", autoplay=True, streaming=False)
+ #修改cosyvoice\cli\frontend.py(关闭切片--非必需)
+ def text_normalize(self, text, split=True, text_frontend=True):
+     if isinstance(text, Generator):
+        logging.info('get tts_text generator, will skip text_normalize!')
+        return [text]
+     if text_frontend is False:
+        return [text] if split is True else text
+     text = text.strip()
+     if self.use_ttsfrd:
+        texts = [i["text"] for i in json.loads(self.frd.do_voicegen_frd(text))["sentences"]]
+        text = ''.join(texts)
+     else:
+        if contains_chinese(text):
+            text = self.zh_tn_model.normalize(text)
+            text = text.replace("\n", "")
+            text = replace_blank(text)
+            text = replace_corner_mark(text)
+            text = text.replace(".", "。")
+            text = text.replace(" - ", "，")
+            text = remove_bracket(text)
+            text = re.sub(r'[，,、]+$', '。', text)
+        else:
+            text = self.en_tn_model.normalize(text)
+            text = spell_out_number(text, self.inflect_parser)
+      
+     # 移除了split_paragraph切片处理,直接返回整个文本
+     return [text] if split is True else text
 ```
-ai-voice-assistant/
-├── reference_audio/      # 参考音频库
-├── generated_audio/      # 合成音频存储
-├── core/                 # 核心逻辑模块
-│   ├── main.py           # 主要代码
+
+#### 2. 启动服务
+
+```python
+# 先启动CosyVoice
+python webui.py --port 50000 --model_dir pretrained_models/models_name
+# 再运行app.py
+python app.py
 ```
+
+## 🙏 致谢
+
+本项目基于以下优秀的开源项目开发：
+
+- [CosyVoice](https://github.com/FunAudioLLM/CosyVoice) 提供语音合成代码
+- [Gradio](https://gradio.app/) 提供的用户友好的WebUI框架
+
+感谢B站UP主TinyLight微光小明分享的爱莉希雅参考音频
+
+- [TinyLight微光小明](https://space.bilibili.com/13264090)
 
 ## ⚠️ 注意事项
 
@@ -128,15 +182,6 @@ ai-voice-assistant/
 ## 🤝 参与贡献
 
 欢迎通过 Issue 或 PR 提交改进建议！
-
-## 🙏 致谢
-
-本项目基于以下优秀的开源项目开发：
-
-- [CosyVoice](https://github.com/FunAudioLLM/CosyVoice)
-
-感谢B站UP主TinyLight微光小明分享的爱莉希雅参考音频
-- [TinyLight微光小明](https://space.bilibili.com/13264090)
 
 ## 📄 开源协议
 
