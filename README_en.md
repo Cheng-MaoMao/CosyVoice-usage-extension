@@ -28,10 +28,6 @@ This system integrates multi-modal AI capabilities to achieve:
 2. Python 3.10+ environment
 3. Valid large model API key
 
-### ⚙️ Installation Steps
-
-#### Command Line Method
-
 ## 🔧 Features
 
 | Function Module | Supported Technology           | Feature Description         |
