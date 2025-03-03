@@ -116,6 +116,11 @@ python ai_chat.py
 
 ### WebUI Method
 
+<details>
+  <summary>WebUI interface</summary>
+  <img src="./images/主界面(中文).png" alt="流程图">
+</details>
+
 #### 1. Modify CosyVoice Code
 
 
