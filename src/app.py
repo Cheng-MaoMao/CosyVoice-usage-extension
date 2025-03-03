@@ -485,7 +485,7 @@ def launch_gradio_interface():
         )
 
     # 启动 Gradio 应用，允许局域网访问
-    demo.launch(server_name="192.168.20.108", share=False)
+    demo.launch(server_name="localhost", share=False)
 
 if __name__ == "__main__":
     launch_gradio_interface()
