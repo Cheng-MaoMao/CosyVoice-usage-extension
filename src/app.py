@@ -311,7 +311,7 @@ def launch_gradio_interface():
                     user_input = gr.Textbox(label="输入您的问题", placeholder="在这里输入...")
                     submit_button = gr.Button("发送")
                     output = gr.Textbox(label="AI 的回复", interactive=False)
-                    audio_output = gr.Audio(label="AI 的语音回复", interactive=False)
+                    audio_output = gr.Audio(label="AI 的语音回复", interactive=False, autoplay=True)
                 
                 # 右侧面板：嵌入提示管理
                 with gr.Column(scale=1):

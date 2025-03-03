@@ -30,7 +30,7 @@ headers = {
 }
 
 # 全局变量配置
-chat_model = "deepseek-ai/DeepSeek-R1"  # 用于聊天的大模型
+chat_model = "Pro/deepseek-ai/DeepSeek-V3"  # 用于聊天的大模型
 text_model = "Qwen/Qwen2.5-72B-Instruct"  # 用于文本处理的大模型
 embed_model = "BAAI/bge-m3"  # 用于嵌入的大模型
 
@@ -124,7 +124,7 @@ def ai_chat(user_input: str, embedding_prompt: str, session_id: str):
                 只能选择以下几种感情标记：laughter、strong、breath
                 删除掉在对话过程中添加特殊符号、代码、链接等内容。类似♪、❤等特殊字符和Emoji。
                 删除掉在对话过程中对环境或者动作的输出。类似（指尖轻轻点着唇瓣突然凑近）这种间接描写动作的内容。
-                输入示例：嗨,我们又见面了！今晚的月色真美呢~💗(爱莉希雅望着我)
+                输入示例：（耳尖泛起粉色）嗨,我们又见面了！今晚的月色真美呢~💗(爱莉希雅望着我)
                 修改成：嗨,<strong>我们又见面了！</strong>今晚的月色[breath]真美呢~'''  # 系统提示
             },
             {
