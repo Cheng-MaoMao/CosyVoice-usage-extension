@@ -787,8 +787,20 @@ def gradio_api_use():
         return None
 
 def audio_play(file_path):
+    """
+    播放音频文件。
+    在本地使用 winsound 播放，在网络访问时通过 Gradio 的音频组件播放。
+    
+    Args:
+        file_path: 音频文件路径
+    """
     try:
-        winsound.PlaySound(file_path, winsound.SND_FILENAME)
+        # 检查是否是本地访问
+        if os.environ.get('GRADIO_SERVER_PORT', '50000') == '50000':
+            # 本地访问，使用 winsound 播放
+            winsound.PlaySound(file_path, winsound.SND_FILENAME)
+        # 网络访问时，音频会通过 Gradio 的音频组件自动播放
+        # 不需要额外的处理
     except Exception as e:
         print(f"播放音频失败: {str(e)}")
 

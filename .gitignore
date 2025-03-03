@@ -8,3 +8,6 @@ vector_texts.pkl
 vector_index.bin
 vector_texts.pkl
 vector_index.bin
+/src/generated_audio
+src/config/config.json
+src/reference_audio/audio_info.json

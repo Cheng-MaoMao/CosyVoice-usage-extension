@@ -97,7 +97,7 @@ def build_knowledge_base(embedding_list: str, vector_db: ai_chat.VectorDB) -> st
 def chat_with_ai(user_input: str, embedding_prompt: str, session_id: str, use_kb: bool, vector_db: ai_chat.VectorDB = None):
     """处理用户聊天请求并生成AI回复
     
-    根据用户输入生成回复,支持知识库增强的对话。同时将AI回复转换为语音并自动播放。
+    根据用户输入生成回复,支持知识库增强的对话。同时将AI回复转换为语音。
     
     Args:
         user_input: 用户输入的文本
@@ -107,7 +107,7 @@ def chat_with_ai(user_input: str, embedding_prompt: str, session_id: str, use_kb
         vector_db: 向量数据库实例,用于知识库检索
         
     Returns:
-        str: AI的文本回复
+        tuple: (AI的文本回复, 生成的音频文件路径)
     """
     if not session_id:  
         session_id = str(uuid.uuid1())
@@ -126,13 +126,8 @@ def chat_with_ai(user_input: str, embedding_prompt: str, session_id: str, use_kb
     # 生成语音
     ai_chat.send_audio_info_to_ai(response)
     audio_path = ai_chat.gradio_api_use()
-    if audio_path:
-        try:
-            ai_chat.audio_play(audio_path)
-        except Exception as e:
-            print(f"播放音频失败: {str(e)}")
             
-    return response
+    return response, audio_path
 
 def add_embedding(text_input: str, current_embeddings: str) -> str:
     """将新的文本添加到嵌入列表中
@@ -315,7 +310,8 @@ def launch_gradio_interface():
                     generate_id_btn = gr.Button("生成新会话ID")
                     user_input = gr.Textbox(label="输入您的问题", placeholder="在这里输入...")
                     submit_button = gr.Button("发送")
-                    output = gr.Textbox(label="AI 的回复（语音已自动播放）", interactive=False)
+                    output = gr.Textbox(label="AI 的回复", interactive=False)
+                    audio_output = gr.Audio(label="AI 的语音回复", interactive=False)
                 
                 # 右侧面板：嵌入提示管理
                 with gr.Column(scale=1):
@@ -428,7 +424,7 @@ def launch_gradio_interface():
         submit_button.click(
             fn=lambda x, y, z, w: chat_with_ai(x, y, z, w, vector_db),
             inputs=[user_input, embedding_list, session_id, use_kb_switch],
-            outputs=output
+            outputs=[output, audio_output]
         )
 
         add_text_btn.click(
@@ -488,8 +484,8 @@ def launch_gradio_interface():
             outputs=session_id
         )
 
-    # 启动 Gradio 应用
-    demo.launch()
+    # 启动 Gradio 应用，允许局域网访问
+    demo.launch(server_name="192.168.20.108", share=False)
 
 if __name__ == "__main__":
     launch_gradio_interface()
