@@ -13,7 +13,7 @@ This system integrates multi-modal AI capabilities to achieve:
 - 🗣️ Intelligent dialogue generation
 - 📚 Semantic retrieval from a knowledge base
 - 🔊 Emotional voice synthesis
-- 🌐 Automated web content analysis
+- 🌐 User-friendly WebUI
 
 <details>
   <summary>View Program Flowchart</summary>

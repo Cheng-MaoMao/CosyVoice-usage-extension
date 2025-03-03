@@ -8,7 +8,22 @@ import os
 def update_model_config(chat_url: str, chat_key: str, chat_model: str,
                        text_url: str, text_key: str, text_model: str,
                        embed_url: str, embed_key: str, embed_model: str):
-    # 更新模型配置
+    """更新三个模型(聊天、文本优化、嵌入)的配置参数
+    
+    Args:
+        chat_url: 聊天模型的API URL
+        chat_key: 聊天模型的API密钥
+        chat_model: 聊天模型名称
+        text_url: 文本优化模型的API URL  
+        text_key: 文本优化模型的API密钥
+        text_model: 文本优化模型名称
+        embed_url: 嵌入模型的API URL
+        embed_key: 嵌入模型的API密钥
+        embed_model: 嵌入模型名称
+    
+    Returns:
+        str: 配置更新状态信息
+    """
     ai_chat.api_url = chat_url
     ai_chat.headers["Authorization"] = f"Bearer {chat_key}"
     ai_chat.chat_model = chat_model
@@ -30,7 +45,17 @@ def update_model_config(chat_url: str, chat_key: str, chat_model: str,
     return "模型配置已更新"
 
 def build_knowledge_base(embedding_list: str, vector_db: ai_chat.VectorDB) -> str:
-    """构建知识库"""
+    """构建向量数据库知识库
+    
+    将文本和网页URL列表转换为向量形式存储到数据库中,用于后续的语义搜索。
+    
+    Args:
+        embedding_list: 包含文本和网页URL的字符串,每行一个条目
+        vector_db: 向量数据库实例
+    
+    Returns:
+        str: 知识库构建状态信息
+    """
     if not embedding_list:
         return "知识库为空，请添加文本或网页URL"
     
@@ -70,7 +95,20 @@ def build_knowledge_base(embedding_list: str, vector_db: ai_chat.VectorDB) -> st
         return f"构建知识库失败: {str(e)}"
 
 def chat_with_ai(user_input: str, embedding_prompt: str, session_id: str, use_kb: bool, vector_db: ai_chat.VectorDB = None):
-    """处理聊天请求"""
+    """处理用户聊天请求并生成AI回复
+    
+    根据用户输入生成回复,支持知识库增强的对话。同时将AI回复转换为语音并自动播放。
+    
+    Args:
+        user_input: 用户输入的文本
+        embedding_prompt: 嵌入提示文本
+        session_id: 会话ID,用于维护对话上下文
+        use_kb: 是否使用知识库
+        vector_db: 向量数据库实例,用于知识库检索
+        
+    Returns:
+        str: AI的文本回复
+    """
     if not session_id:  
         session_id = str(uuid.uuid1())
         
@@ -97,25 +135,57 @@ def chat_with_ai(user_input: str, embedding_prompt: str, session_id: str, use_kb
     return response
 
 def add_embedding(text_input: str, current_embeddings: str) -> str:
-    # 添加新的嵌入提示到当前列表
+    """将新的文本添加到嵌入列表中
+    
+    Args:
+        text_input: 要添加的新文本
+        current_embeddings: 当前的嵌入列表文本
+        
+    Returns:
+        str: 更新后的嵌入列表文本
+    """
     if not current_embeddings:
         return text_input
     return current_embeddings + "\n" + text_input
 
 def add_webpage(url_input: str, current_embeddings: str) -> str:
-    # 添加网页URL到当前列表
+    """将新的网页URL添加到嵌入列表中
+    
+    Args:
+        url_input: 要添加的网页URL
+        current_embeddings: 当前的嵌入列表文本
+        
+    Returns:
+        str: 更新后的嵌入列表文本
+    """
     if not current_embeddings:
         return "网页URL: " + url_input
     return current_embeddings + "\n" + "网页URL: " + url_input
 
 def generate_session_id() -> str:
-    # 生成新的会话ID
+    """生成新的UUID格式会话ID
+    
+    Returns:
+        str: 新生成的会话ID
+    """
     return str(uuid.uuid1())
 
 def save_config(embedding_list: str, chat_url: str, chat_key: str, chat_model: str,
                text_url: str, text_key: str, text_model: str,
                embed_url: str, embed_key: str, embed_model: str) -> str:
-    """保存配置到文件"""
+    """将当前配置保存到JSON配置文件
+    
+    保存嵌入列表和三个模型(聊天、文本优化、嵌入)的配置参数到本地文件。
+    
+    Args:
+        embedding_list: 当前的嵌入列表文本
+        chat_url/key/model: 聊天模型配置参数
+        text_url/key/model: 文本优化模型配置参数
+        embed_url/key/model: 嵌入模型配置参数
+        
+    Returns:
+        str: 配置保存状态信息
+    """
     config = {
         "embedding_list": embedding_list,
         "chat": {
@@ -147,7 +217,13 @@ def save_config(embedding_list: str, chat_url: str, chat_key: str, chat_model: s
         return f"保存配置失败: {str(e)}"
 
 def load_config() -> dict:
-    """加载配置文件"""
+    """从JSON配置文件加载配置
+    
+    如果配置文件不存在或加载失败,则返回默认配置。
+    
+    Returns:
+        dict: 包含嵌入列表和三个模型配置的字典
+    """
     config_path = os.path.join(os.path.dirname(__file__), "config", "config.json")
     default_config = {
         "embedding_list": "",
@@ -179,7 +255,14 @@ def load_config() -> dict:
         return default_config
 
 def launch_gradio_interface():
-    # 加载配置
+    """启动Gradio Web界面
+    
+    创建并启动包含聊天界面和模型配置界面的Gradio应用。
+    主要功能包括:
+    1. 聊天对话(支持语音播放)
+    2. 知识库管理(文本和网页URL)
+    3. 三个模型的配置管理
+    """
     config = load_config()
     
     # 创建向量数据库实例并尝试加载已保存的数据
@@ -193,7 +276,17 @@ def launch_gradio_interface():
     }
     
     def handle_kb_switch(switch_value, embedding_content):
-        """处理知识库开关变化"""
+        """处理知识库启用/禁用开关的状态变化
+        
+        当开关打开时,如果知识库内容有变化或未构建,则重新构建知识库。
+        
+        Args:
+            switch_value: 开关状态(True/False)
+            embedding_content: 当前的嵌入列表内容
+            
+        Returns:
+            str: 知识库状态信息
+        """
         if switch_value:
             if not state["kb_built"] or embedding_content != state["last_embedding"]:
                 state["last_embedding"] = embedding_content
@@ -351,7 +444,17 @@ def launch_gradio_interface():
         )
 
         def update_and_build_kb(embedding_content, use_kb):
-            """更新并构建知识库"""
+            """更新嵌入内容并重建知识库
+            
+            当知识库启用且内容发生变化时,重新构建知识库。
+            
+            Args:
+                embedding_content: 新的嵌入列表内容
+                use_kb: 知识库是否启用
+                
+            Returns:
+                str: 知识库更新状态信息
+            """
             if not use_kb:
                 state["kb_built"] = False
                 return "知识库未启用"
@@ -369,7 +472,7 @@ def launch_gradio_interface():
         build_kb_btn.click(
             fn=update_and_build_kb,
             inputs=[embedding_list, use_kb_switch],
-            outputs=[kb_status]
+            outputs=kb_status
         )
 
         # 添加知识库开关状态变化事件
