@@ -157,6 +157,62 @@ def add_webpage(url_input: str, current_embeddings: str) -> str:
         return "网页URL: " + url_input
     return current_embeddings + "\n" + "网页URL: " + url_input
 
+def delete_all_embeddings() -> str:
+    """清空嵌入列表
+    
+    Returns:
+        str: 空字符串
+    """
+    return ""
+
+def delete_last_text(current_embeddings: str) -> str:
+    """删除最后一条文本嵌入
+    
+    Args:
+        current_embeddings: 当前的嵌入列表文本
+        
+    Returns:
+        str: 更新后的嵌入列表文本
+    """
+    if not current_embeddings:
+        return ""
+    
+    lines = current_embeddings.strip().split('\n')
+    if not lines:
+        return ""
+    
+    # 从后向前查找第一个非URL的行
+    for i in range(len(lines)-1, -1, -1):
+        if not lines[i].startswith("网页URL: "):
+            lines.pop(i)
+            break
+    
+    return "\n".join(lines)
+
+def delete_last_url(current_embeddings: str) -> str:
+    """删除最后一条网页URL
+    
+    Args:
+        current_embeddings: 当前的嵌入列表文本
+        
+    Returns:
+        str: 更新后的嵌入列表文本
+    """
+    if not current_embeddings:
+        return ""
+    
+    lines = current_embeddings.strip().split('\n')
+    if not lines:
+        return ""
+    
+    # 从后向前查找第一个URL行
+    for i in range(len(lines)-1, -1, -1):
+        if lines[i].startswith("网页URL: "):
+            lines.pop(i)
+            break
+    
+    return "\n".join(lines)
+
 def generate_session_id() -> str:
     """生成新的UUID格式会话ID
     
@@ -273,7 +329,9 @@ def launch_gradio_interface():
     def handle_kb_switch(switch_value, embedding_content):
         """处理知识库启用/禁用开关的状态变化
         
-        当开关打开时,如果知识库内容有变化或未构建,则重新构建知识库。
+        当开关打开时:
+        1. 如果本地知识库文件存在且嵌入列表内容未变化，直接加载已有知识库
+        2. 如果本地知识库文件不存在或嵌入列表内容有变化，则重新构建知识库
         
         Args:
             switch_value: 开关状态(True/False)
@@ -283,6 +341,18 @@ def launch_gradio_interface():
             str: 知识库状态信息
         """
         if switch_value:
+            # 检查本地知识库文件是否存在
+            index_file = os.path.join(os.path.dirname(__file__), "vector_index.bin")
+            texts_file = os.path.join(os.path.dirname(__file__), "vector_texts.pkl")
+            
+            if os.path.exists(index_file) and os.path.exists(texts_file):
+                # 如果嵌入列表内容未变化，直接加载已有知识库
+                if state["last_embedding"] == embedding_content:
+                    if vector_db.load_db():
+                        state["kb_built"] = True
+                        return "已加载本地知识库"
+                
+            # 如果本地文件不存在或内容有变化，重新构建知识库
             if not state["kb_built"] or embedding_content != state["last_embedding"]:
                 state["last_embedding"] = embedding_content
                 result = build_knowledge_base(embedding_content, vector_db)
@@ -320,15 +390,23 @@ def launch_gradio_interface():
                         value=False,
                         interactive=True
                     )
-                    embedding_list = gr.TextArea(
-                        label="当前嵌入提示列表",
-                        interactive=False,
-                        value=config["embedding_list"]
-                    )
+                    with gr.Row():
+                        embedding_list = gr.TextArea(
+                            label="当前嵌入提示列表",
+                            interactive=False,
+                            value=config["embedding_list"]
+                        )
+                        delete_all_btn = gr.Button("清空列表", variant="secondary")
+                    
                     text_input = gr.Textbox(label="添加文本嵌入", placeholder="输入要嵌入的文本...")
-                    add_text_btn = gr.Button("添加文本")
+                    with gr.Row():
+                        add_text_btn = gr.Button("添加文本")
+                        delete_text_btn = gr.Button("删除最后一条文本", variant="secondary")
+                    
                     url_input = gr.Textbox(label="添加网页URL", placeholder="输入网页URL...")
-                    add_url_btn = gr.Button("添加网页")
+                    with gr.Row():
+                        add_url_btn = gr.Button("添加网页")
+                        delete_url_btn = gr.Button("删除最后一条URL", variant="secondary")
                     build_kb_btn = gr.Button("构建知识库")
                     kb_status = gr.Textbox(label="知识库状态", interactive=False)
         
@@ -439,10 +517,30 @@ def launch_gradio_interface():
             outputs=embedding_list
         )
 
+        # 添加删除按钮的事件处理
+        delete_all_btn.click(
+            fn=delete_all_embeddings,
+            outputs=embedding_list
+        )
+
+        delete_text_btn.click(
+            fn=delete_last_text,
+            inputs=[embedding_list],
+            outputs=embedding_list
+        )
+
+        delete_url_btn.click(
+            fn=delete_last_url,
+            inputs=[embedding_list],
+            outputs=embedding_list
+        )
+
         def update_and_build_kb(embedding_content, use_kb):
             """更新嵌入内容并重建知识库
             
-            当知识库启用且内容发生变化时,重新构建知识库。
+            当知识库启用时:
+            1. 如果本地知识库文件存在且嵌入列表内容未变化，直接加载已有知识库
+            2. 如果本地知识库文件不存在或嵌入列表内容有变化，则重新构建知识库
             
             Args:
                 embedding_content: 新的嵌入列表内容
@@ -455,14 +553,21 @@ def launch_gradio_interface():
                 state["kb_built"] = False
                 return "知识库未启用"
             
-            if embedding_content != state["last_embedding"]:
-                state["last_embedding"] = embedding_content
-                state["kb_built"] = True
-                return build_knowledge_base(embedding_content, vector_db)
-            elif not state["kb_built"]:
-                state["kb_built"] = True
-                return build_knowledge_base(embedding_content, vector_db)
-            return "知识库未发生变化，使用已有知识库"
+            # 检查本地知识库文件是否存在
+            index_file = os.path.join(os.path.dirname(__file__), "vector_index.bin")
+            texts_file = os.path.join(os.path.dirname(__file__), "vector_texts.pkl")
+            
+            if os.path.exists(index_file) and os.path.exists(texts_file):
+                # 如果嵌入列表内容未变化，直接加载已有知识库
+                if state["last_embedding"] == embedding_content:
+                    if vector_db.load_db():
+                        state["kb_built"] = True
+                        return "已加载本地知识库"
+            
+            # 如果本地文件不存在或内容有变化，重新构建知识库
+            state["last_embedding"] = embedding_content
+            state["kb_built"] = True
+            return build_knowledge_base(embedding_content, vector_db)
 
         # 构建知识库按钮事件
         build_kb_btn.click(
