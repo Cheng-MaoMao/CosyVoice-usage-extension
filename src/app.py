@@ -24,10 +24,21 @@ def update_model_config(chat_url: str, chat_key: str, chat_model: str,
     Returns:
         str: 配置更新状态信息
     """
+    # 打印配置信息以便调试
+    print("更新模型配置:")
+    print(f"聊天模型: {chat_model}, API密钥: {'已设置' if chat_key else '未设置'}")
+    print(f"文本模型: {text_model}, API密钥: {'已设置' if text_key else '未设置'}")
+    print(f"嵌入模型: {embed_model}, API密钥: {'已设置' if embed_key else '未设置'}")
+    
+    # 更新聊天模型配置
     ai_chat.api_url = chat_url
-    ai_chat.headers["Authorization"] = f"Bearer {chat_key}"
+    ai_chat.headers = {
+        "Authorization": f"Bearer {chat_key}",
+        "Content-Type": "application/json"
+    }
     ai_chat.chat_model = chat_model
     
+    # 更新文本处理模型配置
     ai_chat.text_api_url = text_url
     ai_chat.text_headers = {
         "Authorization": f"Bearer {text_key}",
@@ -35,6 +46,7 @@ def update_model_config(chat_url: str, chat_key: str, chat_model: str,
     }
     ai_chat.text_model = text_model
     
+    # 更新嵌入模型配置
     ai_chat.url_embedding = embed_url
     ai_chat.embed_headers = {
         "Authorization": f"Bearer {embed_key}",
@@ -590,7 +602,7 @@ def launch_gradio_interface():
         )
 
     # 启动 Gradio 应用，允许局域网访问
-    demo.launch(server_name="192.168.20.108", share=False)
+    demo.launch(server_name="0.0.0.0", share=False)
 
 if __name__ == "__main__":
     launch_gradio_interface()
